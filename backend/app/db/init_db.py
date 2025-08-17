@@ -6,6 +6,8 @@ import app.models.knowledge_tree
 import app.models.lesson
 import app.models.question
 import app.models.user
+import app.models.organization
+import app.models.course
 
 
 def init_db() -> None:

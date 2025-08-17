@@ -11,6 +11,7 @@ class KnowledgeTree(Base, TimestampMixin):
     topic = Column(String, index=True)
 
     sections = relationship("Section", back_populates="tree", cascade="all, delete-orphan")
+    course = relationship("Course", back_populates="knowledge_tree", uselist=False)
 
 
 class Section(Base, TimestampMixin):
