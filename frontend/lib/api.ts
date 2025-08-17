@@ -9,7 +9,110 @@ const api = axios.create({
   },
 });
 
-// Knowledge Tree API
+// Set auth token for API requests
+export const setAuthToken = (token: string | null) => {
+  if (token) {
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  } else {
+    delete api.defaults.headers.common['Authorization'];
+  }
+};
+
+// Auth API
+export const registerUser = async (email: string, password: string, name: string) => {
+  const response = await api.post('/auth/register', { email, password, name });
+  return response.data;
+};
+
+export const loginUser = async (email: string, password: string) => {
+  const response = await api.post('/auth/login', null, {
+    params: { email, password }
+  });
+  return response.data;
+};
+
+export const googleAuth = async (accessToken: string) => {
+  const response = await api.post('/auth/google', { access_token: accessToken });
+  return response.data;
+};
+
+export const getCurrentUser = async () => {
+  const response = await api.get('/auth/me');
+  return response.data;
+};
+
+// Course API
+export const createCourse = async (courseData: {
+  title: string;
+  description?: string;
+  topic: string;
+  visibility?: 'private' | 'organization' | 'public';
+  organization_id?: number;
+}) => {
+  const response = await api.post('/courses/', courseData);
+  return response.data;
+};
+
+export const getCourses = async (organizationId?: number) => {
+  const params = organizationId ? { organization_id: organizationId } : {};
+  const response = await api.get('/courses/', { params });
+  return response.data;
+};
+
+export const getCourse = async (courseId: number) => {
+  const response = await api.get(`/courses/${courseId}`);
+  return response.data;
+};
+
+export const enrollInCourse = async (courseId: number) => {
+  const response = await api.post(`/courses/${courseId}/enroll`);
+  return response.data;
+};
+
+export const getCourseEnrollment = async (courseId: number) => {
+  const response = await api.get(`/courses/${courseId}/enrollment`);
+  return response.data;
+};
+
+export const updateCourseProgress = async (courseId: number, progressData: {
+  subsection_id: number;
+  score?: number;
+  completed: boolean;
+}) => {
+  const response = await api.post(`/courses/${courseId}/progress`, progressData);
+  return response.data;
+};
+
+// Organization API
+export const createOrganization = async (orgData: { name: string; description?: string }) => {
+  const response = await api.post('/organizations/', orgData);
+  return response.data;
+};
+
+export const getMyOrganizations = async () => {
+  const response = await api.get('/organizations/');
+  return response.data;
+};
+
+export const getOrganization = async (orgId: number) => {
+  const response = await api.get(`/organizations/${orgId}`);
+  return response.data;
+};
+
+export const inviteUserToOrganization = async (orgId: number, inviteData: {
+  email: string;
+  role?: 'admin' | 'member';
+}) => {
+  const response = await api.post(`/organizations/${orgId}/invites`, inviteData);
+  return response.data;
+};
+
+export const acceptOrganizationInvite = async (token: string) => {
+  const response = await api.post(`/organizations/invites/${token}/accept`);
+  return response.data;
+};
+
+// Knowledge Tree API (updated to work with courses)
 export const createKnowledgeTree = async (topic: string) => {
   const response = await api.post('/knowledge-tree/', { topic });
   return response.data;
@@ -20,7 +123,7 @@ export const getKnowledgeTree = async (treeId: number) => {
   return response.data;
 };
 
-// Lesson API - FIXED: Now uses correct subsection endpoint
+// Lesson API
 export const getLesson = async (subsectionId: number) => {
   const response = await api.get(`/lessons/subsection/${subsectionId}`);
   return response.data;
@@ -45,29 +148,10 @@ export const evaluateAnswer = async (questionId: number, answer: string) => {
   return response.data;
 };
 
-// User API
-export const registerUser = async (email: string, password: string, name: string) => {
-  const response = await api.post('/users/register', { email, password, name });
-  return response.data;
-};
-
-export const loginUser = async (email: string, password: string) => {
-  const response = await api.post('/users/login', { email, password });
-  return response.data;
-};
-
+// Legacy user progress (keeping for backward compatibility)
 export const updateUserProgress = async (subsectionId: number, score: number) => {
   const response = await api.post('/users/progress', { subsection_id: subsectionId, score });
   return response.data;
-};
-
-// Set auth token for API requests
-export const setAuthToken = (token: string | null) => {
-  if (token) {
-    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-  } else {
-    delete api.defaults.headers.common['Authorization'];
-  }
 };
 
 export default api;
