@@ -9,6 +9,36 @@
 - **Icons**: Lucide React
 - **Markdown**: React Markdown for content rendering
 
+### ⚠️ Important: Tailwind CSS v4 + Shadcn Compatibility
+
+**Issue**: Shadcn UI components were designed for Tailwind CSS v3, but this project uses Tailwind CSS v4. This causes CSS variable mapping issues where Shadcn buttons appear unstyled.
+
+**Solution**: The `frontend/app/globals.css` file contains special CSS variable mappings to make Shadcn components work with Tailwind v4:
+
+```css
+:root {
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --primary: #1e40af;
+  --primary-foreground: #ffffff;
+  /* ... other variables */
+}
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  /* ... mappings for all Shadcn variables */
+}
+```
+
+**Key Points**:
+- DO NOT remove the `@theme` block in globals.css
+- CSS variables must be named without the `--color-` prefix in `:root`
+- The `@theme` block maps them to the `--color-*` format that Shadcn expects
+- If Shadcn components appear unstyled, check that all required CSS variables are mapped
+
 ## Backend
 - **Framework**: FastAPI with Python 3.9+
 - **Database**: PostgreSQL with SQLAlchemy ORM

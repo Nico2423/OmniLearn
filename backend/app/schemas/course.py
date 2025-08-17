@@ -7,9 +7,9 @@ from app.schemas.knowledge_tree import KnowledgeTreeResponse
 
 
 class CourseVisibility(str, Enum):
-    PRIVATE = "private"
-    ORGANIZATION = "organization"
-    PUBLIC = "public"
+    PRIVATE = "PRIVATE"
+    ORGANIZATION = "ORGANIZATION"
+    PUBLIC = "PUBLIC"
 
 
 class CourseBase(BaseModel):

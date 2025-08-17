@@ -6,9 +6,9 @@ from app.models.base import Base, TimestampMixin
 
 
 class CourseVisibility(enum.Enum):
-    PRIVATE = "private"  # Only creator can access
-    ORGANIZATION = "organization"  # All organization members can access
-    PUBLIC = "public"  # Anyone can access (future feature)
+    PRIVATE = "PRIVATE"  # Only creator can access
+    ORGANIZATION = "ORGANIZATION"  # All organization members can access
+    PUBLIC = "PUBLIC"  # Anyone can access (future feature)
 
 
 class Course(Base, TimestampMixin):

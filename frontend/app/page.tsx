@@ -6,16 +6,69 @@ import { AuthProvider, useAuth } from '../lib/auth-context';
 import { AuthScreen } from '../components/auth/AuthScreen';
 import { Header } from '../components/Header';
 import { CourseForm } from '../components/CourseForm';
+import { CourseDashboard } from '../components/CourseDashboard';
 import KnowledgeTreeView from '../components/KnowledgeTreeView';
+import { getCourse, createKnowledgeTree, linkKnowledgeTreeToCourse, enrollInCourse } from '../lib/api';
 
 const queryClient = new QueryClient();
 
+type ViewState = 'dashboard' | 'create' | 'learning';
+
 function AppContent() {
   const { user, loading } = useAuth();
+  const [currentView, setCurrentView] = useState<ViewState>('dashboard');
+  const [activeTreeId, setActiveTreeId] = useState<number | null>(null);
   const [activeCourseId, setActiveCourseId] = useState<number | null>(null);
 
-  const handleCourseCreated = (courseId: number) => {
+  const handleKnowledgeTreeCreated = (treeId: number) => {
+    setActiveTreeId(treeId);
+    setCurrentView('learning');
+  };
+
+  const handleCourseSelected = async (courseId: number, knowledgeTreeId?: number) => {
+    console.log('Opening course:', courseId, 'with knowledge tree:', knowledgeTreeId);
     setActiveCourseId(courseId);
+    
+    try {
+      if (knowledgeTreeId) {
+        // Course has knowledge tree, just load it
+        setActiveTreeId(knowledgeTreeId);
+        setCurrentView('learning');
+        
+        // Try to enroll user in course (in background)
+        enrollInCourse(courseId).catch(error => {
+          console.log('Background enrollment note:', error.response?.data?.detail || error.message);
+        });
+      } else {
+        // Course exists but no knowledge tree yet - need to generate it
+        console.log('Generating knowledge tree for course...');
+        
+        const course = await getCourse(courseId);
+        console.log('Got course:', course.title);
+        
+        const knowledgeTree = await createKnowledgeTree(course.topic);
+        console.log('Generated knowledge tree:', knowledgeTree.id);
+        
+        await linkKnowledgeTreeToCourse(courseId, knowledgeTree.id);
+        console.log('Linked knowledge tree to course');
+        
+        await enrollInCourse(courseId);
+        console.log('Enrolled in course');
+        
+        setActiveTreeId(knowledgeTree.id);
+        setCurrentView('learning');
+      }
+    } catch (error) {
+      console.error('Failed to open course:', error);
+      alert('Failed to open course. Please try again.');
+      setCurrentView('dashboard');
+    }
+  };
+
+  const handleBackToDashboard = () => {
+    setCurrentView('dashboard');
+    setActiveTreeId(null);
+    setActiveCourseId(null);
   };
 
   if (loading) {
@@ -37,25 +90,38 @@ function AppContent() {
     <div className="min-h-screen bg-gray-50">
       <Header />
       <main className="container mx-auto py-8">
-        {!activeCourseId ? (
-          <CourseForm onSuccess={handleCourseCreated} />
-        ) : (
+        {currentView === 'dashboard' && (
+          <CourseDashboard 
+            onCreateNew={() => setCurrentView('create')}
+            onSelectCourse={handleCourseSelected}
+          />
+        )}
+        
+        {currentView === 'create' && (
           <div>
             <div className="mb-4">
               <button
-                onClick={() => setActiveCourseId(null)}
+                onClick={handleBackToDashboard}
                 className="text-blue-600 hover:text-blue-800 font-medium"
               >
-                ← Back to Course Creation
+                ← Back to Dashboard
               </button>
             </div>
-            {/* TODO: Integrate course with knowledge tree */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-bold mb-4">Course Created Successfully!</h2>
-              <p className="text-gray-600">
-                Course ID: {activeCourseId}. Knowledge tree integration coming soon.
-              </p>
+            <CourseForm onSuccess={handleKnowledgeTreeCreated} />
+          </div>
+        )}
+        
+        {currentView === 'learning' && activeTreeId && (
+          <div>
+            <div className="mb-4">
+              <button
+                onClick={handleBackToDashboard}
+                className="text-blue-600 hover:text-blue-800 font-medium"
+              >
+                ← Back to Dashboard
+              </button>
             </div>
+            <KnowledgeTreeView treeId={activeTreeId} />
           </div>
         )}
       </main>

@@ -8,19 +8,19 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
-import { createCourse } from '../lib/api';
+import { createCourse, createKnowledgeTree } from '../lib/api';
 
 const courseSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters'),
   description: z.string().optional(),
   topic: z.string().min(3, 'Topic must be at least 3 characters'),
-  visibility: z.enum(['private', 'organization', 'public']).default('private'),
+  visibility: z.enum(['PRIVATE', 'ORGANIZATION', 'PUBLIC']).default('PRIVATE'),
 });
 
 type CourseFormData = z.infer<typeof courseSchema>;
 
 interface CourseFormProps {
-  onSuccess: (courseId: number) => void;
+  onSuccess: (knowledgeTreeId: number) => void;
 }
 
 export function CourseForm({ onSuccess }: CourseFormProps) {
@@ -35,7 +35,7 @@ export function CourseForm({ onSuccess }: CourseFormProps) {
   } = useForm<CourseFormData>({
     resolver: zodResolver(courseSchema),
     defaultValues: {
-      visibility: 'private',
+      visibility: 'PRIVATE',
     },
   });
 
@@ -44,9 +44,16 @@ export function CourseForm({ onSuccess }: CourseFormProps) {
     setError(null);
 
     try {
+      // Create the course first
       const course = await createCourse(data);
+      
+      // Then create the knowledge tree for the course topic
+      const knowledgeTree = await createKnowledgeTree(data.topic);
+      
+      // TODO: Link the knowledge tree to the course in the backend
+      
       reset();
-      onSuccess(course.id);
+      onSuccess(knowledgeTree.id); // Pass the knowledge tree ID to show the tree
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to create course. Please try again.');
     } finally {
@@ -116,9 +123,9 @@ export function CourseForm({ onSuccess }: CourseFormProps) {
               {...register('visibility')}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             >
-              <option value="private">Private (Only me)</option>
-              <option value="organization">Organization (Team members)</option>
-              <option value="public">Public (Everyone)</option>
+              <option value="PRIVATE">Private (Only me)</option>
+              <option value="ORGANIZATION">Organization (Team members)</option>
+              <option value="PUBLIC">Public (Everyone)</option>
             </select>
             {errors.visibility && (
               <p className="text-red-500 text-sm mt-1">{errors.visibility.message}</p>

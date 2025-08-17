@@ -5,6 +5,7 @@ from typing import List, Optional
 from app.db.session import get_db
 from app.api.endpoints.auth import get_current_user, get_current_user_optional
 from app.models.user import User
+from app.models.course import Course
 from app.services.course import (
     create_course, get_course_by_id, get_user_courses, update_course,
     enroll_user_in_course, get_user_enrollment, update_progress
@@ -72,9 +73,23 @@ def get_course(
     # Get enrollment count
     enrollment_count = len(course.enrollments)
     
-    response_data = CourseDetailResponse.from_orm(course)
-    response_data.enrollment_count = enrollment_count
-    response_data.is_enrolled = is_enrolled
+    # Manually construct response to avoid serialization issues
+    response_data = CourseDetailResponse(
+        id=course.id,
+        title=course.title,
+        description=course.description,
+        topic=course.topic,
+        visibility=course.visibility,
+        is_active=course.is_active,
+        created_by_id=course.created_by_id,
+        organization_id=course.organization_id,
+        knowledge_tree_id=course.knowledge_tree_id,
+        created_at=course.created_at,
+        updated_at=course.updated_at,
+        knowledge_tree=None,  # TODO: Serialize knowledge tree if needed
+        enrollment_count=enrollment_count,
+        is_enrolled=is_enrolled
+    )
     
     return response_data
 
@@ -110,10 +125,17 @@ def enroll_in_course(
             detail="Cannot enroll in this course"
         )
     
-    # Convert completed_subsections from JSON string to list
+    # Manually construct response to handle JSON string conversion
     import json
-    response_data = CourseEnrollmentResponse.from_orm(enrollment)
-    response_data.completed_subsections = json.loads(enrollment.completed_subsections or "[]")
+    response_data = CourseEnrollmentResponse(
+        id=enrollment.id,
+        course_id=enrollment.course_id,
+        user_id=enrollment.user_id,
+        is_active=enrollment.is_active,
+        completed_subsections=json.loads(enrollment.completed_subsections or "[]"),
+        current_subsection_id=enrollment.current_subsection_id,
+        created_at=enrollment.created_at
+    )
     
     return response_data
 
@@ -132,10 +154,17 @@ def get_my_enrollment(
             detail="Not enrolled in this course"
         )
     
-    # Convert completed_subsections from JSON string to list
+    # Manually construct response to handle JSON string conversion
     import json
-    response_data = CourseEnrollmentResponse.from_orm(enrollment)
-    response_data.completed_subsections = json.loads(enrollment.completed_subsections or "[]")
+    response_data = CourseEnrollmentResponse(
+        id=enrollment.id,
+        course_id=enrollment.course_id,
+        user_id=enrollment.user_id,
+        is_active=enrollment.is_active,
+        completed_subsections=json.loads(enrollment.completed_subsections or "[]"),
+        current_subsection_id=enrollment.current_subsection_id,
+        created_at=enrollment.created_at
+    )
     
     return response_data
 
@@ -181,3 +210,60 @@ def get_course_progress(
         )
     
     return enrollment.progress_records
+
+
+@router.delete("/{course_id}")
+def delete_course(
+    course_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a course (creator only)"""
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Course not found"
+        )
+    
+    # Only creator can delete
+    if course.created_by_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to delete this course"
+        )
+    
+    # Soft delete by setting is_active to False
+    course.is_active = False
+    db.commit()
+    
+    return {"message": "Course deleted successfully"}
+
+
+@router.put("/{course_id}/knowledge-tree")
+def link_knowledge_tree_to_course(
+    course_id: int,
+    knowledge_tree_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Link a knowledge tree to a course"""
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Course not found"
+        )
+    
+    # Only creator can link knowledge tree
+    if course.created_by_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to modify this course"
+        )
+    
+    course.knowledge_tree_id = knowledge_tree_id
+    db.commit()
+    db.refresh(course)
+    
+    return course

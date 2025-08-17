@@ -28,6 +28,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check if we're in the browser
+    if (typeof window === 'undefined') {
+      setLoading(false);
+      return;
+    }
+
     // Check for stored token on mount
     const storedToken = localStorage.getItem('auth_token');
     if (storedToken) {
@@ -37,9 +43,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Verify token and get user info
       getCurrentUser()
         .then((userData) => {
+          console.log('Token valid, user:', userData.email);
           setUser(userData);
         })
-        .catch(() => {
+        .catch((error) => {
+          console.log('Token validation failed, clearing token');
           // Token is invalid, clear it
           localStorage.removeItem('auth_token');
           setAuthToken(null);

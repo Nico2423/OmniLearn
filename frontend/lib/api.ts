@@ -7,7 +7,21 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 10000, // 10 second timeout
 });
+
+// Add response interceptor for better error handling
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.code === 'ECONNABORTED') {
+      console.error('Request timeout');
+    } else if (error.message === 'Network Error') {
+      console.error('Network error - check if backend is running');
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Set auth token for API requests
 export const setAuthToken = (token: string | null) => {
@@ -46,7 +60,7 @@ export const createCourse = async (courseData: {
   title: string;
   description?: string;
   topic: string;
-  visibility?: 'private' | 'organization' | 'public';
+  visibility?: 'PRIVATE' | 'ORGANIZATION' | 'PUBLIC';
   organization_id?: number;
 }) => {
   const response = await api.post('/courses/', courseData);
@@ -155,3 +169,15 @@ export const updateUserProgress = async (subsectionId: number, score: number) =>
 };
 
 export default api;
+export const deleteCourse = async (courseId: number) => {
+  const response = await api.delete(`/courses/${courseId}`);
+  return response.data;
+};
+
+export const linkKnowledgeTreeToCourse = async (courseId: number, knowledgeTreeId: number) => {
+  const response = await api.put(`/courses/${courseId}/knowledge-tree`, null, {
+    params: { knowledge_tree_id: knowledgeTreeId }
+  });
+  return response.data;
+};
+
