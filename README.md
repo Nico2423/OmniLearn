@@ -53,13 +53,19 @@ OPENAI_API_KEY=your_openai_api_key
 
 3. Start the application using Docker Compose:
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
-4. Access the application:
+4. Run database migrations:
+```bash
+docker compose exec backend alembic upgrade head
+```
+
+5. Access the application:
    - Frontend: http://localhost:12000
    - Backend API: http://localhost:12001
    - API Documentation: http://localhost:12001/api/v1/docs
+   - Database: localhost:15432 (postgres/postgres)
 
 ## Usage
 
