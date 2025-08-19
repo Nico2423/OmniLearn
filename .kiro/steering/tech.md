@@ -75,6 +75,26 @@ cd backend && uv pip install -e . && uvicorn app.main:app --reload
 cd backend && alembic upgrade head
 ```
 
+### Database Migrations
+**IMPORTANT**: Always run migrations from Docker containers, not host machine.
+
+```bash
+# Apply migrations (recommended method)
+docker compose exec backend alembic upgrade head
+
+# Check migration status
+docker compose exec backend alembic current
+
+# Generate new migration
+docker compose exec backend alembic revision --autogenerate -m "Description"
+```
+
+**Database Ports**:
+- External (from host): `localhost:15432`
+- Internal (Docker): `db:5432`
+
+See `docs/DATABASE_MIGRATIONS.md` for complete guide.
+
 ### Environment Variables
 - `OPENAI_API_KEY`, `OPENROUTER_API_KEY`, `GEMINI_API_KEY`: AI provider keys
 - `AI_PROVIDER`: Provider selection (openai, openrouter, gemini)
