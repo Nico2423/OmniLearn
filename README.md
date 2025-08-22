@@ -2,6 +2,8 @@
 
 OmniLearn is an AI-powered adaptive learning platform that creates personalized learning paths for any topic. The application generates knowledge trees, lesson content, and practice questions with feedback to help students learn effectively.
 
+<img width="1486" height="855" alt="OmniLearn-UI" src="https://github.com/user-attachments/assets/07162bce-9d70-4937-9d27-7a237c7c7c89" />
+
 ## Features
 
 - **Knowledge Tree Generation**: Create a structured learning path for any topic
