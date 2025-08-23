@@ -1,8 +1,8 @@
 import json
-from typing import List, Dict, Any
+from typing import List, Dict, Any, AsyncGenerator
 from abc import ABC, abstractmethod
 
-from openai import OpenAI
+from openai import OpenAI, AsyncOpenAI
 import google.generativeai as genai
 
 from app.core.config import settings
@@ -15,6 +15,11 @@ class AIProvider(ABC):
     async def generate_completion(self, messages: List[Dict[str, str]], use_json: bool = False) -> str:
         """Generate a completion from the AI provider."""
         pass
+    
+    @abstractmethod
+    async def stream_completion(self, messages: List[Dict[str, str]]) -> AsyncGenerator[str, None]:
+        """Stream completion from the AI provider."""
+        pass
 
 
 class OpenAIProvider(AIProvider):
@@ -22,6 +27,7 @@ class OpenAIProvider(AIProvider):
     
     def __init__(self, api_key: str, base_url: str, model: str):
         self.client = OpenAI(api_key=api_key, base_url=base_url)
+        self.async_client = AsyncOpenAI(api_key=api_key, base_url=base_url)
         self.model = model
     
     async def generate_completion(self, messages: List[Dict[str, str]], use_json: bool = False) -> str:
@@ -35,6 +41,18 @@ class OpenAIProvider(AIProvider):
         
         response = self.client.chat.completions.create(**kwargs)
         return response.choices[0].message.content
+    
+    async def stream_completion(self, messages: List[Dict[str, str]]) -> AsyncGenerator[str, None]:
+        """Stream completion from OpenAI."""
+        stream = await self.async_client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            stream=True
+        )
+        
+        async for chunk in stream:
+            if chunk.choices[0].delta.content:
+                yield chunk.choices[0].delta.content
 
 
 class OpenRouterProvider(AIProvider):
@@ -42,6 +60,10 @@ class OpenRouterProvider(AIProvider):
     
     def __init__(self, api_key: str, model: str):
         self.client = OpenAI(
+            api_key=api_key,
+            base_url="https://openrouter.ai/api/v1"
+        )
+        self.async_client = AsyncOpenAI(
             api_key=api_key,
             base_url="https://openrouter.ai/api/v1"
         )
@@ -58,6 +80,18 @@ class OpenRouterProvider(AIProvider):
         
         response = self.client.chat.completions.create(**kwargs)
         return response.choices[0].message.content
+    
+    async def stream_completion(self, messages: List[Dict[str, str]]) -> AsyncGenerator[str, None]:
+        """Stream completion from OpenRouter."""
+        stream = await self.async_client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            stream=True
+        )
+        
+        async for chunk in stream:
+            if chunk.choices[0].delta.content:
+                yield chunk.choices[0].delta.content
 
 
 class GeminiProvider(AIProvider):
@@ -81,6 +115,25 @@ class GeminiProvider(AIProvider):
         
         response = self.model.generate_content(prompt)
         return response.text
+    
+    async def stream_completion(self, messages: List[Dict[str, str]]) -> AsyncGenerator[str, None]:
+        """Simulate streaming completion from Gemini by yielding the full response in chunks."""
+        # Convert OpenAI-style messages to Gemini format
+        prompt = ""
+        for message in messages:
+            if message["role"] == "system":
+                prompt += f"System: {message['content']}\n\n"
+            elif message["role"] == "user":
+                prompt += f"User: {message['content']}\n\n"
+        
+        response = self.model.generate_content(prompt)
+        full_text = response.text
+        
+        # Simulate streaming by yielding chunks of text
+        chunk_size = 50  # characters per chunk
+        for i in range(0, len(full_text), chunk_size):
+            chunk = full_text[i:i+chunk_size]
+            yield chunk
 
 
 class AIService:
@@ -89,6 +142,11 @@ class AIService:
     def __init__(self):
         self.provider = self._create_provider()
         self.enable_multimedia = settings.ENABLE_MULTIMEDIA
+    
+    async def stream_completion(self, messages: List[Dict[str, str]]) -> AsyncGenerator[str, None]:
+        """Stream completion from the AI provider."""
+        async for chunk in self.provider.stream_completion(messages):
+            yield chunk
     
     def _create_provider(self) -> AIProvider:
         """Create the appropriate AI provider based on configuration."""

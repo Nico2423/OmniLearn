@@ -9,6 +9,8 @@ import { Button } from "./ui/button";
 import { Form, FormControl, FormField, FormItem } from "./ui/form";
 import { Textarea } from "./ui/textarea";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card";
+import { Collapsible } from "./ui/collapsible";
+import { MarkdownRenderer } from "./ui/markdown-renderer";
 import { getQuestions, createQuestions, evaluateAnswer } from "../lib/api";
 
 interface QuestionViewProps {
@@ -107,6 +109,8 @@ export default function QuestionView({ sectionId }: QuestionViewProps) {
         </CardHeader>
         <CardContent>
           <p className="mb-4">{currentQuestion.text}</p>
+          
+          
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
@@ -139,6 +143,7 @@ export default function QuestionView({ sectionId }: QuestionViewProps) {
                 {feedback.isCorrect ? "Correct!" : "Not quite right"}
               </h3>
               <p className="mt-2">{feedback.feedback}</p>
+              
             </div>
           )}
         </CardContent>

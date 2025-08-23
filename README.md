@@ -10,6 +10,7 @@ OmniLearn is an AI-powered adaptive learning platform that creates personalized 
 - **Personalized Lesson Content**: AI-generated educational content for each topic
 - **Adaptive Practice Questions**: Questions that adjust to your knowledge level
 - **Real-time Feedback**: Get immediate feedback on your answers
+- **AI Reasoning Traces**: View detailed explanations of how the AI arrived at answers and evaluations
 - **Progress Tracking**: Track your learning journey
 - **Multimedia Support**: Visual aids to enhance learning (optional)
 

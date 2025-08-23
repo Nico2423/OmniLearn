@@ -60,7 +60,7 @@ class QuestionService:
                 section_id=section_id,
                 text=question_data["text"],
                 difficulty=question_data["difficulty"],
-                correct_answer=question_data["correct_answer"],
+                correct_answer=question_data["correct_answer"]
             )
             self.db.add(db_question)
             self.db.flush()
@@ -70,7 +70,7 @@ class QuestionService:
                 section_id=db_question.section_id,
                 text=db_question.text,
                 difficulty=db_question.difficulty,
-                correct_answer=db_question.correct_answer,
+                correct_answer=db_question.correct_answer
             )
             question_responses.append(self._add_hateoas_links(response))
         
@@ -95,7 +95,7 @@ class QuestionService:
                 section_id=db_question.section_id,
                 text=db_question.text,
                 difficulty=db_question.difficulty,
-                correct_answer=db_question.correct_answer,
+                correct_answer=db_question.correct_answer
             )
             question_responses.append(self._add_hateoas_links(response))
         
@@ -116,5 +116,5 @@ class QuestionService:
         return AnswerFeedback(
             is_correct=evaluation["is_correct"],
             feedback=evaluation["feedback"],
-            correct_answer=db_question.correct_answer if not evaluation["is_correct"] else None,
+            correct_answer=db_question.correct_answer if not evaluation["is_correct"] else None
         )

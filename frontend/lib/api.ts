@@ -143,6 +143,16 @@ export const getLesson = async (subsectionId: number) => {
   return response.data;
 };
 
+export const streamLesson = async (subsectionId: number, subsectionTitle: string) => {
+  const response = await api.post('/lessons/stream', { 
+    subsection_id: subsectionId, 
+    subsection_title: subsectionTitle 
+  }, {
+    responseType: 'stream'
+  });
+  return response.data;
+};
+
 // Questions API
 export const getQuestions = async (sectionId: number) => {
   const response = await api.get(`/questions/section/${sectionId}`);
@@ -180,4 +190,3 @@ export const linkKnowledgeTreeToCourse = async (courseId: number, knowledgeTreeI
   });
   return response.data;
 };
-

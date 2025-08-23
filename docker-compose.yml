@@ -41,6 +41,18 @@ services:
     networks:
       - omnilearn-network
 
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - omnilearn-network
+
   db:
     image: postgres:15
     ports:
